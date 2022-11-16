@@ -1,0 +1,27 @@
+{
+  "name": "grand-challenge-runner",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jfr2102/grand-challenge-runner.git"
+  },
+  "author": "Johannes Friedlein",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jfr2102/grand-challenge-runner/issues"
+  },
+  "homepage": "https://github.com/jfr2102/grand-challenge-runner#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "express-fileupload": "^1.4.0",
+    "nodemon": "^2.0.20",
+    "uuid": "^9.0.0"
+  }
+}
