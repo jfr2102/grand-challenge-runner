@@ -28,4 +28,4 @@ jobs:
       - run: npm install
       - run: npm run build --if-present
       - name: Restart Appplication with pm2
-      - run: pm2 restart NodeApp
+        run: pm2 restart NodeApp
