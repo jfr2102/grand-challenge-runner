@@ -7,7 +7,7 @@ const { v4: uuidv4 } = require("uuid");
 router.get("/", async (req, res) => {
   console.log(req.body);
 
-  res.send("You can upload your submission to /submission/upload");
+  res.send("You can POST your submission to /submission/upload");
 });
 
 router.post("/upload/", function (req, res) {
