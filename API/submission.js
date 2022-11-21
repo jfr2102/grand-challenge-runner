@@ -22,14 +22,24 @@ router.post("/upload/", function (req, res) {
 });
 
 const runExperiment = async (compose_file) => {
-  // exec(`docker stack deploy --compose-file ${compose_file} benchmarkApp`, (err, output) => {
-  exec(`docker-compose -f ${compose_file} up`, (err, output) => {
-    if (err) {
-      console.error("could not execute command: ", err);
-      return err;
-    }
-    console.log("Output: \n", output);
-  });
+  if (process.env.ENV === "dev") {
+    console.log("dev env");
+    exec(`docker-compose -f ${compose_file} up`, (err, output) => {
+      if (err) {
+        console.error("could not execute command: ", err);
+        return err;
+      }
+      console.log("Output: \n", output);
+    });
+  } else {
+    exec(`docker stack deploy --compose-file ${compose_file} benchmarkApp`, (err, output) => {
+      if (err) {
+        console.error("could not execute command: ", err);
+        return err;
+      }
+      console.log("Output: \n", output);
+    });
+  }
 };
 
 module.exports = router;
