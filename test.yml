@@ -1,2 +1,8 @@
-test: test
-  test: abc
+version: "3.9"
+services:
+  redis1:
+    image: redis:alpine
+  redis2:
+    image: redis:alpine
+  redis3:
+    image: redis:alpine
