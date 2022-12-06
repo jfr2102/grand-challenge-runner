@@ -1,4 +1,3 @@
-//TODO: read env max resource restrictions
 //TODO: undefined limts get the rest of available resources evenly distributed
 
 const express = require("express");
@@ -9,6 +8,7 @@ const experiments = [];
 const yaml = require("js-yaml");
 var Multimap = require("multimap");
 const fs = require("fs");
+const { config } = require("process");
 router.get("/", async (req, res) => {
   res.send("/submission endpoint");
 });
@@ -19,7 +19,7 @@ router.post("/upload/", async (req, res) => {
   experiments.push(file.name);
   const fileName = `upload/${uuidv4()}docker-stack.yml`;
   await file.mv(fileName);
-  if (checkConstraints(file)) {
+  if (checkConstraints(file, fileName)) {
     runExperiment(fileName);
     res.status(200).send("ok");
   } else {
@@ -57,7 +57,7 @@ const getMemoryUnitFactor = (memory_limit) => {
 };
 
 // TODO move to seperate File for constraints
-const checkConstraints = (compose_file) => {
+const checkConstraints = (compose_file, fileName) => {
   var cpu_sum = 0;
   var memory_sum = 0;
   const doc = loadYmlFromFile(compose_file);
@@ -66,6 +66,15 @@ const checkConstraints = (compose_file) => {
   var missingCPU = 0;
   var missingMemory = 0;
 
+  // read the resource restriction limit from config file
+  try {
+    const config = yaml.load(fs.readFileSync("config/config.yml", "utf8"));
+  } catch (e) {
+    console.log(e);
+    return;
+  }
+
+  // go over all services and sum up resource restrictions * replicas and mark those with mssing ones
   services.map((service) => {
     const limits = doc.services[service].deploy?.resources?.limits;
     if (limits) {
@@ -82,11 +91,9 @@ const checkConstraints = (compose_file) => {
       }
 
       memory_limit = limits.memory;
-
       if (memory_limit) {
         console.log(memory_limit);
         var factor = getMemoryUnitFactor(memory_limit);
-
         memory_sum += memory_limit.slice(0, -1) * factor;
       } else {
         missingLimits.set(service, "memory");
@@ -99,18 +106,48 @@ const checkConstraints = (compose_file) => {
     }
   });
 
+  if (cpu_sum > config.cpu_limit || memory_sum > config.memory_limit) {
+    console.log(`exceeded resources \n CPU sum: ${cpu_sum} Memory sum: ${memory_sum}`);
+    return false;
+  }
+
   console.log(
     missingLimits._,
     `\n Missing CPU limit: ${missingCPU} Missing memory limit: ${missingMemory}`
   );
 
-  console.log(`CPU sum: ${cpu_sum} Memory sum: ${memory_sum}`);
-
-  treatMissingConstraints(missingLimits, cpu_sum, memory_sum);
-  return false;
+  treatMissingConstraints(
+    doc,
+    fileName,
+    cpu_sum,
+    memory_sum,
+    config.cpu_limit,
+    config.memory_limit,
+    missingLimits,
+    missingCPU,
+    missingMemory
+  );
+  return true;
 };
 
-const treatMissingConstraints = () => {};
+//move to constraints File
+const treatMissingConstraints = (
+  yaml_file,
+  fileName,
+  cpu_sum,
+  memory_sum,
+  cpu_limit,
+  memory_limit,
+  missingLimits,
+  missingCPU,
+  missingMemory
+) => {
+  //EDIT yaml_file
+
+  fs.writeFile(fileName, yaml.dump(yaml_file), (err) => {
+    if (err) return console.log(err);
+  });
+};
 
 const readLabels = (compose_file) => {
   var map = new Multimap();
