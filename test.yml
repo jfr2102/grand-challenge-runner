@@ -1,8 +1,27 @@
 version: "3.9"
 services:
-  redis1:
+  someService:
     image: redis:alpine
-  redis2:
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: 0.50
+          memory: 1G
+  someOtherService:
     image: redis:alpine
-  redis3:
+    deploy:
+      resources:
+        limits:
+          cpus: 0.50
+  redis:
     image: redis:alpine
+    deploy:
+      resources:
+        limits:
+          cpus: 0.50
+          memory: 512M
+  myService:
+    image: redis:alpine
+    deploy:
+      resources:
