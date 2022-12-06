@@ -14,13 +14,14 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/upload/", async (req, res) => {
-  console.log("list:", experiments);
   file = req.files.myfile;
-  experiments.push(file.name);
-  const fileName = `upload/${uuidv4()}docker-stack.yml`;
+  const fileUUID = uuidv4();
+  const fileName = `upload/${fileUUID}docker-stack.yml`;
   await file.mv(fileName);
-  if (checkConstraints(file, fileName)) {
-    runExperiment(fileName);
+  const deployFileName = processConstraints(file, fileName, fileUUID);
+
+  if (deployFileName) {
+    runExperiment(deployFileName);
     res.status(200).send("ok");
   } else {
     res.status(500).send("Invalid Resource Restrictions");
@@ -57,7 +58,7 @@ const getMemoryUnitFactor = (memory_limit) => {
 };
 
 // TODO move to seperate File for constraints
-const checkConstraints = (compose_file, fileName) => {
+const processConstraints = (compose_file, fileName, fileUUID) => {
   var cpu_sum = 0;
   var memory_sum = 0;
   const doc = loadYmlFromFile(compose_file);
@@ -67,8 +68,9 @@ const checkConstraints = (compose_file, fileName) => {
   var missingMemory = 0;
 
   // read the resource restriction limit from config file
+  var limitConfig;
   try {
-    const config = yaml.load(fs.readFileSync("config/config.yml", "utf8"));
+    limitConfig = yaml.load(fs.readFileSync("config/config.yml", "utf8"));
   } catch (e) {
     console.log(e);
     return;
@@ -86,54 +88,57 @@ const checkConstraints = (compose_file, fileName) => {
       if (cpu_limit) {
         cpu_sum += cpu_limit * replicas;
       } else {
-        missingLimits.set(service, "CPU");
-        missingCPU++;
+        missingLimits.set(service, "cpus");
+        missingCPU += replicas;
       }
 
       memory_limit = limits.memory;
       if (memory_limit) {
-        console.log(memory_limit);
+        // console.log(memory_limit);
         var factor = getMemoryUnitFactor(memory_limit);
         memory_sum += memory_limit.slice(0, -1) * factor;
       } else {
         missingLimits.set(service, "memory");
-        missingMemory++;
+        missingMemory += replicas;
       }
     } else {
-      missingLimits.set(service, "CPU", "Memory");
+      missingLimits.set(service, "cpus", "memory");
       missingCPU++;
       missingMemory++;
     }
   });
 
-  if (cpu_sum > config.cpu_limit || memory_sum > config.memory_limit) {
+  if (cpu_sum > limitConfig.cpu_limit || memory_sum > limitConfig.memory_limit) {
     console.log(`exceeded resources \n CPU sum: ${cpu_sum} Memory sum: ${memory_sum}`);
     return false;
   }
 
-  console.log(
-    missingLimits._,
-    `\n Missing CPU limit: ${missingCPU} Missing memory limit: ${missingMemory}`
-  );
+  // console.log(
+  //   missingLimits._,
+  //   `\n Missing CPU limit: ${missingCPU} Missing memory limit: ${missingMemory}`
+  // );
 
-  treatMissingConstraints(
+  const deployFileName = treatMissingConstraints(
     doc,
     fileName,
+    fileUUID,
     cpu_sum,
     memory_sum,
-    config.cpu_limit,
-    config.memory_limit,
+    limitConfig.cpu_limit,
+    limitConfig.memory_limit,
     missingLimits,
     missingCPU,
     missingMemory
   );
-  return true;
+
+  return deployFileName;
 };
 
 //move to constraints File
 const treatMissingConstraints = (
   yaml_file,
   fileName,
+  fileUUID,
   cpu_sum,
   memory_sum,
   cpu_limit,
@@ -142,37 +147,84 @@ const treatMissingConstraints = (
   missingCPU,
   missingMemory
 ) => {
-  //EDIT yaml_file
+  const cpu_available_total = cpu_limit - cpu_sum;
+  const memory_available_total = memory_limit - memory_sum;
 
-  fs.writeFile(fileName, yaml.dump(yaml_file), (err) => {
-    if (err) return console.log(err);
+  const cpu_available_relative = Math.round((cpu_available_total / missingCPU) * 100) / 100;
+  const memory_available_relative = (memory_available_total / missingMemory).toFixed(2) + "M";
+
+  console.log("cpu limit | memory limit");
+  console.log("  ", cpu_limit, " | ", memory_limit);
+  console.log("cpu used sum | memory used sum");
+  console.log("  ", cpu_sum, " | ", memory_sum);
+  console.log("- _____________________________");
+
+  console.log("= ", cpu_available_total, " | ", memory_available_total);
+  console.log("missing cpu, missing memory");
+  console.log("% ", missingCPU, " | ", missingMemory);
+  console.log("= ", cpu_available_relative, " | ", memory_available_relative);
+
+  missingLimits.forEach((value, key) => {
+    const LIMITS = {
+      cpu: cpu_available_relative,
+      memory: memory_available_relative,
+    };
+
+    const RESOURCES = {
+      limits: LIMITS,
+    };
+
+    const DEPLOY = {
+      resources: RESOURCES,
+    };
+    //make sure to not overwrite other things:
+    if (!yaml_file.services[key].deploy) {
+      yaml_file.services[key]["deploy"] = DEPLOY;
+    } else if (!yaml_file.services[key].deploy.resources) {
+      yaml_file.services[key].deploy["resources"] = RESOURCES;
+    } else if (!yaml_file.services[key].deploy.resources.limits) {
+      yaml_file.services[key].deploy.resources["limits"] = LIMITS;
+    } else {
+      if (value === "cpus")
+        yaml_file.services[key].deploy.resources.limits[value] = cpu_available_relative;
+      else if (value === "memory")
+        yaml_file.services[key].deploy.resources.limits[value] = memory_available_relative;
+    }
   });
+  // write out to file
+  const deployFileName = `deploy/${fileUUID}.yaml`;
+  const success = true;
+  fs.writeFileSync(deployFileName, yaml.dump(yaml_file), (err) => {
+    if (err) success = false;
+    return;
+  });
+
+  return success ? deployFileName : undefined;
 };
 
-const readLabels = (compose_file) => {
-  var map = new Multimap();
-  const doc = loadYmlFromFile(compose_file);
-  const services = Object.keys(doc.services);
+// const readLabels = (compose_file) => {
+//   var map = new Multimap();
+//   const doc = loadYmlFromFile(compose_file);
+//   const services = Object.keys(doc.services);
+//   TODO: handle cases where not available
+//   services.map((service) => {
+//     const label = doc.services[service].deploy.placement.label;
+//     map.set(label, service);
+//   });
 
-  services.map((service) => {
-    const label = doc.services[service].deploy.placement.label;
-    map.set(label, service);
-  });
-
-  console.log(map);
-  return map;
-};
+//   return map;
+// };
 
 const runExperiment = async (compose_file) => {
   if (process.env.ENV === "dev") {
-    console.log("dev env");
-    exec(`docker-compose -f ${compose_file} up`, (err, output) => {
-      if (err) {
-        console.error("could not execute command: ", err);
-        return err;
-      }
-      console.log("Output: \n", output);
-    });
+    console.log("DEV, dont run command");
+    // exec(`docker-compose -f ${compose_file} up`, (err, output) => {
+    //   if (err) {
+    //     console.error("could not execute command: ", err);
+    //     return err;
+    //   }
+    //   console.log("Output: \n", output);
+    // });
   } else {
     exec(`docker stack deploy --compose-file ${compose_file} benchmarkApp`, (err, output) => {
       if (err) {

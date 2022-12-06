@@ -1,4 +1,4 @@
-version: '3.9'
+version: "3.9"
 services:
   someService:
     image: redis:alpine
@@ -11,9 +11,10 @@ services:
   someOtherService:
     image: redis:alpine
     deploy:
+      replicas: 2
       resources:
         limits:
-          cpus: 0.5
+          testWrongLimit: 1
   redis:
     image: redis:alpine
     deploy:
