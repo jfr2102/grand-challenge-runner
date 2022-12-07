@@ -25,6 +25,8 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
+      - run: npm -v
+      - run: node -v
       - run: npm install
       - run: npm run build --if-present
       - name: Restart Appplication with pm2
