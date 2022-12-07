@@ -14,7 +14,6 @@ services:
       replicas: 2
       resources:
         limits:
-          testWrongLimit: 1
   redis:
     image: redis:alpine
     deploy:
