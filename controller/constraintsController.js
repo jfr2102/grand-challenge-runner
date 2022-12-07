@@ -6,14 +6,11 @@ const constraintsControllerHelper = require("../controller/constraintsController
 const processConstraints = (compose_file, fileName, fileUUID) => {
   var cpu_sum = 0;
   var memory_sum = 0;
-
   const doc = constraintsControllerHelper.loadYmlFromFile(compose_file);
   const services = Object.keys(doc.services);
   const missingLimits = new Multimap();
   var missingCPU = 0;
   var missingMemory = 0;
-
-  // read the resource restriction limit from config file
   var limitConfig;
   try {
     limitConfig = yaml.load(fs.readFileSync("config/config.yml", "utf8"));
@@ -56,13 +53,8 @@ const processConstraints = (compose_file, fileName, fileUUID) => {
 
   if (cpu_sum > limitConfig.cpu_limit || memory_sum > limitConfig.memory_limit) {
     console.log(`exceeded resources \n CPU sum: ${cpu_sum} Memory sum: ${memory_sum}`);
-    return false;
+    return;
   }
-
-  // console.log(
-  //   missingLimits._,
-  //   `\n Missing CPU limit: ${missingCPU} Missing memory limit: ${missingMemory}`
-  // );
 
   const deployFileName = treatMissingConstraints(
     doc,
@@ -94,7 +86,6 @@ const treatMissingConstraints = (
 ) => {
   const cpu_available_total = cpu_limit - cpu_sum;
   const memory_available_total = memory_limit - memory_sum;
-
   const cpu_available_relative = Math.round((cpu_available_total / missingCPU) * 100) / 100;
   const memory_available_relative = (memory_available_total / missingMemory).toFixed(2) + "M";
 
