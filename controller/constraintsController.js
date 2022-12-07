@@ -86,7 +86,8 @@ const treatMissingConstraints = (
 ) => {
   const cpu_available_total = cpu_limit - cpu_sum;
   const memory_available_total = memory_limit - memory_sum;
-  const cpu_available_relative = Math.round((cpu_available_total / missingCPU) * 100) / 100;
+  // const cpu_available_relative = Math.round((cpu_available_total / missingCPU) * 100) / 100;
+  const cpu_available_relative = (cpu_available_total / missingCPU).toFixed(2);
   const memory_available_relative = (memory_available_total / missingMemory).toFixed(2) + "M";
 
   console.log("cpu limit | memory limit");
