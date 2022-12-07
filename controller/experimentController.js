@@ -11,6 +11,7 @@ const runExperiment = async (compose_file) => {
     //   console.log("Output: \n", output);
     // });
   } else {
+    console.log("Deploy " + compose_file);
     exec(`docker stack deploy --compose-file ${compose_file} benchmarkApp`, (err, output) => {
       if (err) {
         console.error("could not execute command: ", err);

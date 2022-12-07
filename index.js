@@ -5,6 +5,8 @@ const submission = require("./API/submission");
 const fileUpload = require("express-fileupload");
 const port = 3000;
 
+console.log("Node version: ", process.version);
+
 app.use(
   cors({
     origin: ["http://localhost:3000"],

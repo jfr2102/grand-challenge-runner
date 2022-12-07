@@ -12,7 +12,7 @@ const postSubmissionFile = async (req, res) => {
 
   if (deployFileName) {
     experimentController.runExperiment(deployFileName);
-    res.status(200).send("ok");
+    res.status(200).send("Deployed " + deployFileName);
   } else {
     res.status(500).send("Invalid Resource Restrictions");
   }
