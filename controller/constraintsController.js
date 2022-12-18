@@ -139,20 +139,24 @@ const treatMissingConstraints = (
   return success ? deployFileName : undefined;
 };
 
+const readLabels = (compose_file) => {
+  var map = new Multimap();
+  const doc = constraintsControllerHelper.loadYmlFromFile(compose_file);
+  const services = Object.keys(doc.services);
+  //TODO: handle cases where not available
+  services.map((service) => {
+    const label = doc.services[service].deploy?.labels?.nodetype;
+    if (label) {
+      map.set(label, service);
+    } else {
+      map.set("worker", service);
+    }
+  });
+  return map;
+};
+
 module.exports = {
   processConstraints,
   treatMissingConstraints,
+  readLabels,
 };
-
-// const readLabels = (compose_file) => {
-//   var map = new Multimap();
-//   const doc = loadYmlFromFile(compose_file);
-//   const services = Object.keys(doc.services);
-//   TODO: handle cases where not available
-//   services.map((service) => {
-//     const label = doc.services[service].deploy.placement.label;
-//     map.set(label, service);
-//   });
-
-//   return map;
-// };

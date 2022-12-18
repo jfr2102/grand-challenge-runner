@@ -9,5 +9,6 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/upload/", submissionController.postSubmissionFile);
+router.delete("/:id/", submissionController.removeSubmission);
 
 module.exports = router;
