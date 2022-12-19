@@ -11,8 +11,9 @@ const postSubmissionFile = async (req, res) => {
   await file.mv(fileName);
 
   const deployFileName = constraintsController.processConstraints(file, fileName, submissionUUID);
-  const labels = constraintsController.readLabels(file);
-  console.log("LABELS:\n", labels);
+
+  // maybe handy later, for now we only care about workers
+  // const labels = constraintsController.readLabels(file);
 
   if (deployFileName) {
     const result = await experimentController.runExperiment(deployFileName, submissionUUID, labels);
@@ -24,12 +25,27 @@ const postSubmissionFile = async (req, res) => {
 
 const removeSubmission = async (req, res) => {
   submisisonId = req.params.id;
-  experimentController.removeStack(submisisonId);
+  const success = experimentController.removeStack(submisisonId);
   //TOOD: delte file from disk after some time maybe
-  res.status(200).send("Removed: " + submisisonId);
+  if (success) {
+    res.status(200).send("Removed Stack " + submisisonId);
+  } else {
+    res.status(500).send("Error, cannot remove " + submisisonId);
+  }
+};
+
+const killWorker = async (req, res) => {
+  //TODO: what else can we do instead having to resend the compose file? Could store the relevant info in redis,
+  // then fetch once we want to kill a worker
+  file = req.files.myfile;
+  submisisonId = req.params.id;
+  const workerServices = constraintsController.getWorkerServiceList(file);
+  const result = experimentController.killOneWorker(submisisonId, workerServices);
+  res.send(result);
 };
 
 module.exports = {
   postSubmissionFile,
   removeSubmission,
+  killWorker,
 };

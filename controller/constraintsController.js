@@ -138,19 +138,41 @@ const treatMissingConstraints = (
 
   return success ? deployFileName : undefined;
 };
+/**
+ * Get worker service list for a compose file
+ * Nodes without "nodetype" labels are defaulting to worker type
+ * @param {*} compose_file compose file to read from
+ * @returns List containing service names of all worker labeled services replica times.
+ */
+const getWorkerServiceList = (compose_file) => {
+  var map = new Multimap();
+  var workerList = [];
+  const doc = constraintsControllerHelper.loadYmlFromFile(compose_file);
+  const services = Object.keys(doc.services);
+  //TODO: handle cases where not available
+  services.map((service) => {
+    const label = doc.services[service].deploy?.labels?.nodetype ?? "worker";
+    map.set(label, service);
+
+    if (label === "worker") {
+      const replicas = doc.services[service].deploy?.replicas ?? 1;
+      for (var i = 0; i < replicas; i++) {
+        workerList.push(service);
+      }
+    }
+  });
+  console.log(workerList);
+  return workerList;
+};
 
 const readLabels = (compose_file) => {
   var map = new Multimap();
   const doc = constraintsControllerHelper.loadYmlFromFile(compose_file);
   const services = Object.keys(doc.services);
-  //TODO: handle cases where not available
-  services.map((service) => {
-    const label = doc.services[service].deploy?.labels?.nodetype;
-    if (label) {
-      map.set(label, service);
-    } else {
-      map.set("worker", service);
-    }
+  //TODO handle cases where not available
+  services?.map((service) => {
+    const label = doc.services[service].deploy?.labels?.nodetype ?? "worker";
+    map.set(label, service);
   });
   return map;
 };
@@ -158,5 +180,6 @@ const readLabels = (compose_file) => {
 module.exports = {
   processConstraints,
   treatMissingConstraints,
+  getWorkerServiceList,
   readLabels,
 };

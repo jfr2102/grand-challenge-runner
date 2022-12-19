@@ -28,9 +28,35 @@ const runExperiment = async (compose_file, id, labels) => {
 /**
  * Kill a random worker of a submission stack
  * @param {*} id - submission ID of the stack
- * @param {*} labels - labels map mapping service to worker or coordinator
+ * @param {*} workerServices - service name list of all worker services
  */
-const killOneWorker = (id, labels) => {};
+
+function get_random(list) {
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+/**
+ *
+ * @param {*} id
+ * @param {*} workerServices
+ */
+const killOneWorker = (id, workerServices) => {
+  // pick a random one of the worker services (if there are several)
+  const serviceToKill = get_random(workerServices);
+  const fullServiceName = `submission_${id}_${serviceToKill}`;
+  // we want to find the IP address of one of the swarm nodes the service is running on
+  // first list nodes this service is running one
+  exec(`docker service ps ${fullServiceName} --format "{{.Node}}"`, (err, output) => {
+    if (err) {
+      console.error("could not execute command: ", err);
+    }
+    console.log("Output: \n", output);
+  });
+
+  // docker service ps submission_5pqg3bcXmXzkMzKyyvtEYn_someService  --format "{{.Node}}"
+  // docker node inspect NODENAME --format '{{ .Status.Addr  }}
+  // find out on which workers
+};
 
 const removeStack = (id) => {
   console.log(`removing stack: submission_${id}`);
@@ -42,7 +68,7 @@ const removeStack = (id) => {
     }
     console.log("Output: \n", output);
   });
-  return error;
+  return error ? true : false;
 };
 
 module.exports = {
