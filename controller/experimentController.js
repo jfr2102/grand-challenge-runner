@@ -25,6 +25,11 @@ const runExperiment = async (compose_file, id, labels) => {
   }
 };
 
+/**
+ * Kill a random worker of a submission stack
+ * @param {*} id - submission ID of the stack
+ * @param {*} labels - labels map mapping service to worker or coordinator
+ */
 const killOneWorker = (id, labels) => {};
 
 const removeStack = (id) => {

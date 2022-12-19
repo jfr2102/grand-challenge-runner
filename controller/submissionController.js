@@ -1,15 +1,18 @@
 const { v4: uuidv4 } = require("uuid");
 const constraintsController = require("../controller/constraintsController");
 const experimentController = require("../controller/experimentController");
+const short = require("short-uuid");
 
 const postSubmissionFile = async (req, res) => {
   file = req.files.myfile;
-  const submissionUUID = uuidv4();
-  const fileName = `upload/${submissionUUID}docker-stack.yml`;
+  // const submissionUUID = uuidv4();
+  const submissionUUID = short.generate();
+  const fileName = `upload/${submissionUUID}-docker-stack.yml`;
   await file.mv(fileName);
 
   const deployFileName = constraintsController.processConstraints(file, fileName, submissionUUID);
   const labels = constraintsController.readLabels(file);
+  console.log("LABELS:\n", labels);
 
   if (deployFileName) {
     const result = await experimentController.runExperiment(deployFileName, submissionUUID, labels);

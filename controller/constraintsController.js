@@ -129,7 +129,7 @@ const treatMissingConstraints = (
     }
   });
   // write out to file
-  const deployFileName = `deploy/${fileUUID}.yaml`;
+  const deployFileName = `deploy/${fileUUID}-docker-stack.yaml`;
   const success = true;
   fs.writeFileSync(deployFileName, yaml.dump(yaml_file), (err) => {
     if (err) success = false;
