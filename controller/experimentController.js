@@ -46,16 +46,32 @@ const killOneWorker = (id, workerServices) => {
   const fullServiceName = `submission_${id}_${serviceToKill}`;
   // we want to find the IP address of one of the swarm nodes the service is running on
   // first list nodes this service is running one
+  var swarmNodes = [];
+  var hostIP;
   exec(`docker service ps ${fullServiceName} --format "{{.Node}}"`, (err, output) => {
+    // exec(`ls -l`, (err, output) => {
     if (err) {
       console.error("could not execute command: ", err);
     }
     console.log("Output: \n", output);
+
+    output.split("\n").forEach((line) => {
+      swarmNodes.push(line.replace(/\s/g, ""));
+    });
+
+    //choose random swarm worker node that runs an instance of this service:
+    const workerHost = get_random(swarmNodes);
+    exec(`docker node inspect ${workerHost} --format '{{.Status.Addr}}'`, (err, output) => {
+      if (err) {
+        console.error("could not execute command: ", err);
+      }
+      hostIP = output;
+      console.log("Output: \n", output);
+    });
   });
 
-  // docker service ps submission_5pqg3bcXmXzkMzKyyvtEYn_someService  --format "{{.Node}}"
-  // docker node inspect NODENAME --format '{{ .Status.Addr  }}
-  // find out on which workers
+  console.log("HOST IP: ", hostIP);
+  // now we need to send this host a message to kill one of the service instances that he is running
 };
 
 const removeStack = (id) => {
