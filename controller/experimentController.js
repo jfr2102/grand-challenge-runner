@@ -55,7 +55,7 @@ const killOneWorker = (id, workerServices) => {
     if (err) {
       console.error("could not execute command: ", err);
     }
-
+    
     output.split("\n").forEach((line) => {
       swarmNodes.push(line.replace(/\s/g, ""));
     });
@@ -69,10 +69,9 @@ const killOneWorker = (id, workerServices) => {
         console.error("could not execute command: ", err);
       }
       hostIP = output.replace(/\s/g, "");
-      console.log("Output: \n", output);
+      console.log("Output: \n", hostIP);
     });
   });
-
   // now we need to send this host a message to kill one of the service instances that he is running
 };
 
