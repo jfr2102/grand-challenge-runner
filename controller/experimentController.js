@@ -153,7 +153,7 @@ const killOneWorker = (id, workerServices) => {
     (err, output) => {
       logIfError(err);
       const swarmNodes = getServiceInstanceNodeMappingFromOutput(output);
-      swarmNodes = console.log("Nodes to choose from: ", swarmNodes);
+      console.log("Containers of this service to choose from: ", swarmNodes);
 
       //choose random swarm worker node that runs an instance of this service:
       var serviceInstance = get_random(swarmNodes);
