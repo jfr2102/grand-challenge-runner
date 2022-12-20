@@ -1,18 +1,10 @@
 const { exec, execSync } = require("child_process");
 const { NodeSSH } = require("node-ssh");
-const { hostname } = require("os");
 
 const runExperiment = async (compose_file, id, labels) => {
   console.log(id);
   if (process.env.ENV === "dev") {
     console.log("DEV, dont run command");
-    // exec(`docker-compose -f ${compose_file} up`, (err, output) => {
-    //   if (err) {
-    //     console.error("could not execute command: ", err);
-    //     return err;
-    //   }
-    //   console.log("Output: \n", output);
-    // });
   } else {
     var error;
     console.log("Deploy " + compose_file + "with id: " + id + "\n");
@@ -27,8 +19,9 @@ const runExperiment = async (compose_file, id, labels) => {
   }
 };
 
+// @TODO move to helper
 /**
- *
+ * logs if error is not undefined
  */
 const logIfError = (err) => {
   if (err) console.error("could not execute command: ", err);
@@ -39,6 +32,10 @@ const logIfError = (err) => {
  * @param {*} workerServices - service name list of all worker services
  */
 
+// @TODO move to helper
+/**
+ * get random element of an array
+ */
 const get_random = (list) => {
   return list[Math.floor(Math.random() * list.length)];
 };
