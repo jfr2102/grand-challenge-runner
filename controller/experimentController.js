@@ -55,9 +55,11 @@ const killOneWorker = (id, workerServices) => {
     if (err) {
       console.error("could not execute command: ", err);
     }
-    
+
     output.split("\n").forEach((line) => {
-      swarmNodes.push(line.replace(/\s/g, ""));
+      if (line.length > 0) {
+        swarmNodes.push(line.replace(/\s/g, ""));
+      }
     });
 
     console.log("Nodes to choose from: ", swarmNodes);
@@ -69,10 +71,10 @@ const killOneWorker = (id, workerServices) => {
         console.error("could not execute command: ", err);
       }
       hostIP = output.replace(/\s/g, "");
-      console.log("Output: \n", hostIP);
+      // now we need to send this host a message to kill one of the service instances that he is running
+      console.log("chosen host's IP: \n", hostIP);
     });
   });
-  // now we need to send this host a message to kill one of the service instances that he is running
 };
 
 const removeStack = (id) => {
