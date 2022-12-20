@@ -1,4 +1,5 @@
 const { exec } = require("child_process");
+const { NodeSSH } = require("node-ssh");
 
 const runExperiment = async (compose_file, id, labels) => {
   console.log(id);
@@ -34,6 +35,23 @@ const runExperiment = async (compose_file, id, labels) => {
 function get_random(list) {
   return list[Math.floor(Math.random() * list.length)];
 }
+
+const sendKillCommand = (hostIP, serviceName) => {
+  // TODO make username, private key path env file variables
+  const ssh = new NodeSSH();
+  ssh
+    .connect({
+      host: hostIP,
+      username: "ubuntu",
+      privateKeyPath: "/home/ubuntu/.ssh/id_rsa",
+    })
+    .then(() => {
+      ssh.execCommand(`ls -l`).then((result) => {
+        console.log("STDOUT: ", result.stdout);
+        console.log("STDERROR: ", result.stderr);
+      });
+    });
+};
 
 /**
  *
@@ -71,8 +89,10 @@ const killOneWorker = (id, workerServices) => {
         console.error("could not execute command: ", err);
       }
       hostIP = output.replace(/\s/g, "");
-      // now we need to send this host a message to kill one of the service instances that he is running
       console.log("chosen host's IP: \n", hostIP);
+
+      // now we need to send this host a message to kill one of the service instances that he is running
+      sendKillCommand(hostIP, fullServiceName);
     });
   });
 };
