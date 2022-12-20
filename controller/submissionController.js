@@ -35,8 +35,8 @@ const removeSubmission = async (req, res) => {
 };
 
 const killWorker = async (req, res) => {
-  //TODO: what else can we do instead having to resend the compose file? Could store the relevant info in redis,
-  // then fetch once we want to kill a worker
+  // TODO: what else can we do instead having to resend the compose file? Could store the relevant info in redis,
+  // then fetch once we want to kill a worker -> actually just use file from filesystem (we know its name b the ID)
   file = req.files.myfile;
   submisisonId = req.params.id;
   const workerServices = constraintsController.getWorkerServiceList(file);

@@ -42,8 +42,10 @@ function get_random(list) {
  */
 const killOneWorker = (id, workerServices) => {
   // pick a random one of the worker services (if there are several)
+  console.log("Worker services: ", workerServices);
   const serviceToKill = get_random(workerServices);
   const fullServiceName = `submission_${id}_${serviceToKill}`;
+  console.log("Chosen service: ", fullServiceName);
   // we want to find the IP address of one of the swarm nodes the service is running on
   // first list nodes this service is running one
   var swarmNodes = [];
@@ -53,11 +55,12 @@ const killOneWorker = (id, workerServices) => {
     if (err) {
       console.error("could not execute command: ", err);
     }
-    console.log("Output: \n", output);
 
     output.split("\n").forEach((line) => {
       swarmNodes.push(line.replace(/\s/g, ""));
     });
+
+    console.log("Nodes to choose from: ", swarmNodes);
 
     //choose random swarm worker node that runs an instance of this service:
     const workerHost = get_random(swarmNodes);
@@ -65,12 +68,11 @@ const killOneWorker = (id, workerServices) => {
       if (err) {
         console.error("could not execute command: ", err);
       }
-      hostIP = output;
+      hostIP = output.replace(/\s/g, "");
       console.log("Output: \n", output);
     });
   });
 
-  console.log("HOST IP: ", hostIP);
   // now we need to send this host a message to kill one of the service instances that he is running
 };
 

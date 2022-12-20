@@ -161,7 +161,6 @@ const getWorkerServiceList = (compose_file) => {
       }
     }
   });
-  console.log(workerList);
   return workerList;
 };
 
