@@ -129,7 +129,7 @@ const treatMissingConstraints = (
     }
   });
   // write out to file
-  const deployFileName = `deploy/${fileUUID}.yaml`;
+  const deployFileName = `deploy/${fileUUID}-docker-stack.yaml`;
   const success = true;
   fs.writeFileSync(deployFileName, yaml.dump(yaml_file), (err) => {
     if (err) success = false;
@@ -138,21 +138,47 @@ const treatMissingConstraints = (
 
   return success ? deployFileName : undefined;
 };
+/**
+ * Get worker service list for a compose file
+ * Nodes without "nodetype" labels are defaulting to worker type
+ * @param {*} compose_file compose file to read from
+ * @returns List containing service names of all worker labeled services replica times.
+ */
+const getWorkerServiceList = (compose_file) => {
+  var map = new Multimap();
+  var workerList = [];
+  const doc = constraintsControllerHelper.loadYmlFromFile(compose_file);
+  const services = Object.keys(doc.services);
+  //TODO: handle cases where not available
+  services.map((service) => {
+    const label = doc.services[service].deploy?.labels?.nodetype ?? "worker";
+    map.set(label, service);
+
+    if (label === "worker") {
+      const replicas = doc.services[service].deploy?.replicas ?? 1;
+      for (var i = 0; i < replicas; i++) {
+        workerList.push(service);
+      }
+    }
+  });
+  return workerList;
+};
+
+const readLabels = (compose_file) => {
+  var map = new Multimap();
+  const doc = constraintsControllerHelper.loadYmlFromFile(compose_file);
+  const services = Object.keys(doc.services);
+  //TODO handle cases where not available
+  services?.map((service) => {
+    const label = doc.services[service].deploy?.labels?.nodetype ?? "worker";
+    map.set(label, service);
+  });
+  return map;
+};
 
 module.exports = {
   processConstraints,
   treatMissingConstraints,
+  getWorkerServiceList,
+  readLabels,
 };
-
-// const readLabels = (compose_file) => {
-//   var map = new Multimap();
-//   const doc = loadYmlFromFile(compose_file);
-//   const services = Object.keys(doc.services);
-//   TODO: handle cases where not available
-//   services.map((service) => {
-//     const label = doc.services[service].deploy.placement.label;
-//     map.set(label, service);
-//   });
-
-//   return map;
-// };
