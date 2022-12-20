@@ -121,7 +121,7 @@ const isSelf = (nodeName) => {
 
 /**
  * Transform multi row output of docker service ps to a list of (containerId, swarmnode) pairs
- * @param {*} output output from docker service ps command with --format {{.Name}};{{.Id}};{{.Node}} --no-trunc options
+ * @param {*} output output from docker service ps command with --format {{.Name}};{{.ID}};{{.Node}} --no-trunc options
  */
 const getServiceInstanceNodeMappingFromOutput = (output) => {
   var mapping = [];
@@ -136,12 +136,11 @@ const getServiceInstanceNodeMappingFromOutput = (output) => {
 };
 
 /**
- *
- * @param {*} id
- * @param {*} workerServices
+ * Kill / stop a single random worker container of a given stack
+ * @param {*} id submisison / stack id
+ * @param {*} workerServices list of worker services with duplicates to weight replica count
  */
 const killOneWorker = (id, workerServices) => {
-  // pick a random one of the worker services (if there are several)
   console.log("Worker services: ", workerServices);
   const serviceToKill = get_random(workerServices);
   const fullServiceName = `submission_${id}_${serviceToKill}`;
@@ -150,7 +149,7 @@ const killOneWorker = (id, workerServices) => {
   // find the IP address of one of the swarm nodes the service is running on
   // first list nodes this service is running one and their container IDs
   exec(
-    `docker service ps ${fullServiceName} --format "{{.Name}};{{.Id}};{{.Node}}" --no-trunc`,
+    `docker service ps ${fullServiceName} --format "{{.Name}};{{.ID}};{{.Node}}" --no-trunc --filter desired-state=running`,
     (err, output) => {
       logIfError(err);
       const swarmNodes = getServiceInstanceNodeMappingFromOutput(output);
