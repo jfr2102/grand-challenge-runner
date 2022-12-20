@@ -1,5 +1,4 @@
-# This is a basic workflow to help you get started with Actions
-
+# CI to deploy Node.js App on the swarm leader node
 name: CI
 
 # Controls when the workflow will run
