@@ -112,7 +112,7 @@ const isSelf = (nodeName) => {
   try {
     hostName = execSync("docker node inspect self --format '{{.Description.Hostname}}'").toString();
     console.log("HOSTNAME: ", hostName, "; ", hostName.length());
-    consolelog("VS. NODE NAME: ", nodeName, "; ", nodeName.length());
+    console.log("VS. NODE NAME: ", nodeName, "; ", nodeName.length());
   } catch (e) {
     // console.log(e.error);
     return true;
