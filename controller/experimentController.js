@@ -44,17 +44,18 @@ const get_random = (list) => {
  * Generate cmdline command to stop a container with given container ID or name
  * @param {*} container The container's id or name to stop
  */
-const buildDockerStopCommand = (container) => {
-  return `docker stop ${container}`;
+const buildDockerStopCommand = (serviceInstance) => {
+  const fullContainerName = `${serviceInstance.name}.${serviceInstance.id}`;
+  return `docker stop ${fullContainerName}`;
 };
 
 //TODO generalize to execute any pumba command on a container later
 /**
- * execute docker stop command for container ID on local machine
+ * execute docker stop command for container on local machine
  */
-const localKillCommand = (containerId) => {
+const localKillCommand = (serviceInstance) => {
   console.log("Node is myself -> execute command locally:");
-  exec(buildDockerStopCommand(containerId), (err, output) => {
+  exec(buildDockerStopCommand(serviceInstance), (err, output) => {
     logIfError(err);
     console.log("Output: \n", output);
   });
@@ -96,8 +97,7 @@ const sendKillCommand = (hostIP, serviceInstance) => {
     .then(() => {
       // later can send more advanced pumba commands here, we can use container ID or later service name etc. to do some filtering
       // because of swarm the container cant be killed with just the id or name but we need the combination
-      const fullContainerName = `${serviceInstance.name}.${serviceInstance.id}`;
-      ssh.execCommand(buildDockerStopCommand(fullContainerName)).then((result) => {
+      ssh.execCommand(buildDockerStopCommand(serviceInstance)).then((result) => {
         console.log("STDOUT: ", result.stdout);
         console.log("STDERROR: ", result.stderr);
       });
@@ -108,15 +108,18 @@ const sendKillCommand = (hostIP, serviceInstance) => {
  * get swarm name of the machine this app is running on to decide when to execute command locally and when to send via ssh
  */
 const isSelf = (nodeName) => {
-  const LOCALHOST = "localhost";
   var hostName;
   try {
-    hostName = execSync("docker node inspect self --format '{{.Description.Hostname}}'").toString();
+    hostName = execSync("docker node inspect self --format '{{.Description.Hostname}}'")
+      .toString()
+      .replace(/\n/g, "");
+    console.log("HOSTNAME: ", hostName, "; ", hostName?.length);
+    console.log("VS. NODE NAME: ", nodeName, "; ", nodeName?.length);
   } catch (e) {
-    // console.log(e.error);
-    hostName = LOCALHOST;
+    console.log(e.error);
+    return true;
   }
-  return hostName === nodeName || hostName === LOCALHOST;
+  return hostName === nodeName;
 };
 
 /**
@@ -161,7 +164,7 @@ const killOneWorker = (id, workerServices) => {
 
       if (isSelf(serviceInstance.node)) {
         // execute locally
-        localKillCommand(serviceInstance.id);
+        localKillCommand(serviceInstance);
       } else {
         remoteKillCommand(serviceInstance);
       }
