@@ -110,7 +110,9 @@ const sendKillCommand = (hostIP, serviceInstance) => {
 const isSelf = (nodeName) => {
   var hostName;
   try {
-    hostName = execSync("docker node inspect self --format '{{.Description.Hostname}}'").toString();
+    hostName = execSync("docker node inspect self --format '{{.Description.Hostname}}'")
+      .toString()
+      .replace(/\n/g, "");
     console.log("HOSTNAME: ", hostName, "; ", hostName?.length);
     console.log("VS. NODE NAME: ", nodeName, "; ", nodeName?.length);
   } catch (e) {
