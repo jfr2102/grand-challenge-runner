@@ -108,11 +108,11 @@ const sendKillCommand = (hostIP, serviceInstance) => {
  * get swarm name of the machine this app is running on to decide when to execute command locally and when to send via ssh
  */
 const isSelf = (nodeName) => {
-  const LOCALHOST = "localhost";
   var hostName;
   try {
     hostName = execSync("docker node inspect self --format '{{.Description.Hostname}}'").toString();
-    console.log("HOSTNAME: ", hostName);
+    console.log("HOSTNAME: ", hostName, "; ", hostName.length());
+    consolelog("VS. NODE NAME: ", nodeName, "; ", nodeName.length());
   } catch (e) {
     // console.log(e.error);
     return true;
