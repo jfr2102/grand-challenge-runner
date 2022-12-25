@@ -1,0 +1,10 @@
+{
+    "nodeType" : "worker",
+    "injectCount" : 1, 
+    "operation": {
+        "command": "kill" , 
+        "globalOptions" : [],
+        "commandOptions" : []
+    }
+}
+// containers get chosen by the application (by the nodeType)

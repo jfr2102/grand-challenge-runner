@@ -144,24 +144,24 @@ const treatMissingConstraints = (
  * @param {*} compose_file compose file to read from
  * @returns List containing service names of all worker labeled services replica times.
  */
-const getWorkerServiceList = (compose_file) => {
+const getTargetServiceInstanceList = (compose_file, nodetype) => {
   var map = new Multimap();
-  var workerList = [];
+  var targetList = [];
   const doc = constraintsControllerHelper.loadYmlFromFile(compose_file);
   const services = Object.keys(doc.services);
   //TODO: handle cases where not available
   services.map((service) => {
-    const label = doc.services[service].deploy?.labels?.nodetype ?? "worker";
+    const label = doc.services[service].deploy?.labels?.nodetype ?? nodetype;
     map.set(label, service);
 
-    if (label === "worker") {
+    if (label === nodetype) {
       const replicas = doc.services[service].deploy?.replicas ?? 1;
       for (var i = 0; i < replicas; i++) {
-        workerList.push(service);
+        targetList.push(service);
       }
     }
   });
-  return workerList;
+  return targetList;
 };
 
 const readLabels = (compose_file) => {
@@ -179,6 +179,6 @@ const readLabels = (compose_file) => {
 module.exports = {
   processConstraints,
   treatMissingConstraints,
-  getWorkerServiceList,
+  getWorkerServiceList: getTargetServiceInstanceList,
   readLabels,
 };

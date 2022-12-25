@@ -53,7 +53,7 @@ const buildDockerStopCommand = (serviceInstance) => {
 /**
  * execute docker stop command for container on local machine
  */
-const localKillCommand = (serviceInstance) => {
+const localCommand = (serviceInstance) => {
   console.log("Node is myself -> execute command locally:");
   exec(buildDockerStopCommand(serviceInstance), (err, output) => {
     logIfError(err);
@@ -66,7 +66,7 @@ const localKillCommand = (serviceInstance) => {
  * execute command on remote host given a service instance
  * @param {*} serviceInstance - {name: name, id: id, host: host}
  */
-const remoteKillCommand = (serviceInstance) => {
+const remoteCommand = (serviceInstance) => {
   console.log("Remote Host. Trying to get nodes IP:");
   //get the worker ip and execute on it via ssh
   exec(`docker node inspect ${serviceInstance.node} --format '{{.Status.Addr}}'`, (err, output) => {
@@ -75,7 +75,7 @@ const remoteKillCommand = (serviceInstance) => {
     console.log("chosen host's IP: ", hostIP);
 
     // now we need to send this host a message to kill one of the service instances that he is running
-    sendKillCommand(hostIP, serviceInstance);
+    sendRemoteCommand(hostIP, serviceInstance);
   });
 };
 
@@ -85,7 +85,7 @@ const remoteKillCommand = (serviceInstance) => {
  * @param {*} hostIP - IP address of the host the container is running on
  * @param {*} containerId - container ID of the container to stop
  */
-const sendKillCommand = (hostIP, serviceInstance) => {
+const sendRemoteCommand = (hostIP, serviceInstance) => {
   // TODO make username, private key path env file variables
   const ssh = new NodeSSH();
   ssh
@@ -139,20 +139,20 @@ const getServiceInstanceNodeMappingFromOutput = (output) => {
 };
 
 /**
- * Kill / stop a single random worker container of a given stack
+ *  Inject chaos into a single random container of a target list for a given stack
  * @param {*} id submisison / stack id
- * @param {*} workerServices list of worker services with duplicates to weight replica count
+ * @param {*} targetServiceInstances list of worker services with duplicates to weight replica count
  */
-const killOneWorker = (id, workerServices) => {
-  console.log("Worker services: ", workerServices);
-  const serviceToKill = get_random(workerServices);
-  const fullServiceName = `submission_${id}_${serviceToKill}`;
-  console.log("Chosen service: ", fullServiceName);
+const injectChaosToOne = (id, targetServiceInstances, operation) => {
+  console.log("Target service Instances: ", targetServiceInstances, "operation: ", operation);
+  const serviceToKill = get_random(targetServiceInstances);
+  const fullInstanceName = `submission_${id}_${serviceToKill}`;
+  console.log("Chosen instance: ", fullInstanceName);
 
   // find the IP address of one of the swarm nodes the service is running on
   // first list nodes this service is running one and their container IDs
   exec(
-    `docker service ps ${fullServiceName} --format "{{.Name}};{{.ID}};{{.Node}}" --no-trunc --filter desired-state=running`,
+    `docker service ps ${fullInstanceName} --format "{{.Name}};{{.ID}};{{.Node}}" --no-trunc --filter desired-state=running`,
     (err, output) => {
       logIfError(err);
       const swarmNodes = getServiceInstanceNodeMappingFromOutput(output);
@@ -164,9 +164,9 @@ const killOneWorker = (id, workerServices) => {
 
       if (isSelf(serviceInstance.node)) {
         // execute locally
-        localKillCommand(serviceInstance);
+        localCommand(serviceInstance, operation);
       } else {
-        remoteKillCommand(serviceInstance);
+        remoteCommand(serviceInstance, operation);
       }
     }
   );
@@ -187,6 +187,6 @@ const removeStack = (id) => {
 
 module.exports = {
   runExperiment,
-  killOneWorker,
+  injectChaosToOne,
   removeStack,
 };

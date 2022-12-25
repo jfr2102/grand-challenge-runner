@@ -9,7 +9,7 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/upload/", submissionController.postSubmissionFile);
-router.post("/:id/killworker", submissionController.killWorker);
+router.post("/:id/chaos", submissionController.injectChaos);
 router.delete("/:id/", submissionController.removeSubmission);
 
 module.exports = router;
