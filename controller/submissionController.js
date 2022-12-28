@@ -17,7 +17,7 @@ const postSubmissionFile = async (req, res) => {
   // const labels = constraintsController.readLabels(file);
 
   if (deployFileName) {
-    const result = await experimentController.runExperiment(deployFileName, submissionUUID, labels);
+    const result = await experimentController.runExperiment(deployFileName, submissionUUID);
     res.status(200).send("Deployed " + deployFileName + (result ? result : ""));
   } else {
     res.status(500).send("Invalid Resource Restrictions");

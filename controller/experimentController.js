@@ -2,7 +2,7 @@ const { exec, execSync } = require("child_process");
 const { NodeSSH } = require("node-ssh");
 const { PumbaCommand, Command, NetemCommand } = require("./PumbaCommand");
 
-const runExperiment = async (compose_file, id, labels) => {
+const runExperiment = async (compose_file, id) => {
   console.log(id);
   if (process.env.ENV === "dev") {
     console.log("DEV, dont run command");
