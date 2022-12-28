@@ -178,7 +178,7 @@ const injectChaosToOne = (id, targetServiceInstances, operation) => {
       console.log("Chosen container and node: ", container);
 
       const pumbaCommand = buildPumbaCommand(container, operation);
-
+      console.log("Command: ", pumbaCommand);
       if (isSelf(container.node)) {
         localCommand(pumbaCommand);
       } else {
