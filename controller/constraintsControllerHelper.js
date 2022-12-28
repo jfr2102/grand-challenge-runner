@@ -13,7 +13,7 @@ const loadYmlFromFile = (file) => {
 
 const loadYmlFromFileSystem = (fileName) => {
   try {
-    const yml_file = yaml.load(fs.readFileSync("fileName", "utf8"));
+    const yml_file = yaml.load(fs.readFileSync(fileName, "utf8"));
     return yml_file;
   } catch (e) {
     console.log(e);
