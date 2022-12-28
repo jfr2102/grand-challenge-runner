@@ -27,11 +27,6 @@ const runExperiment = async (compose_file, id, labels) => {
 const logIfError = (err) => {
   if (err) console.error("could not execute command: ", err);
 };
-/**
- * Kill a random worker of a submission stack
- * @param {*} id - submission ID of the stack
- * @param {*} workerServices - service name list of all worker services
- */
 
 // @TODO move to helper
 /**

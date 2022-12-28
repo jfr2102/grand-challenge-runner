@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require("uuid");
 const constraintsController = require("../controller/constraintsController");
+const constraintsControllerHelper = require("../controller/constraintsControllerHelper");
 const experimentController = require("../controller/experimentController");
 const short = require("short-uuid");
 
@@ -35,15 +36,22 @@ const removeSubmission = async (req, res) => {
 };
 
 const injectChaos = async (req, res) => {
-  // TODO: what else can we do instead having to resend the compose file? Could store the relevant info in redis,
-  // then fetch once we want to kill a worker -> actually just use file from filesystem (we know its name b the ID)
-  file = req.files.myfile;
   submisisonId = req.params.id;
+  file = constraintsControllerHelper.loadYmlFromFileSystem(
+    `../deploy/${submisisonId}-docker-stack.yaml`
+  );
+  console.log(file);
+
+  const targetServiceInstances = constraintsController.getTargetServiceInstanceList(
+    file,
+    req.body.nodeType
+  );
+  const result = experimentController.injectChaosToOne(
+    submisisonId,
+    targetServiceInstances,
+    req.body.operation
+  );
   //
-  
-  const targetServiceInstances = constraintsController.getTargetServiceInstanceList(file, req.body.nodetype)
-  const result = experimentController.injectChaosToOne(submisisonId, targetServiceInstances, req.body.operation);
-  // 
   res.send(result);
 };
 

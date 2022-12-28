@@ -10,6 +10,16 @@ const loadYmlFromFile = (file) => {
   }
 };
 
+const loadYmlFromFileSystem = (fileName) => {
+  try {
+    const yml_file = yaml.load(fs.readFileSync("fileName", "utf8"));
+    return yml_file;
+  } catch (e) {
+    console.log(e);
+    return null;
+  }
+};
+
 const getMemoryUnitFactor = (memory_limit) => {
   switch (memory_limit.slice(-1)) {
     case "b":
@@ -30,5 +40,6 @@ const getMemoryUnitFactor = (memory_limit) => {
 
 module.exports = {
   loadYmlFromFile,
+  loadYmlFromFileSystem,
   getMemoryUnitFactor,
 };

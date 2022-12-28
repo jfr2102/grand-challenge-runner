@@ -1,6 +1,5 @@
 {
   "nodeType": "worker",
-  "injectCount": 1,
   "operation": {
     "command": "netem",
     "subCommand": "delay",

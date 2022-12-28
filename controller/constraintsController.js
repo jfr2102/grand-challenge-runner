@@ -145,6 +145,7 @@ const treatMissingConstraints = (
  * @returns List containing service names of all worker labeled services replica times.
  */
 const getTargetServiceInstanceList = (compose_file, nodetype) => {
+  console.log("GET container list for node type: ", nodetype);
   var map = new Multimap();
   var targetList = [];
   const doc = constraintsControllerHelper.loadYmlFromFile(compose_file);
