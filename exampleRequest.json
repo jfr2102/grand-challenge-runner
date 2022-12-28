@@ -3,6 +3,7 @@
   "operation": {
     "command": "netem",
     "subCommand": "delay",
+    "subCommandOptions": {"duration": 60},
     "globalOptions": {},
     "commandOptions": { "time": 10 }
   }

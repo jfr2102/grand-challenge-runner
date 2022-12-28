@@ -19,11 +19,12 @@ const NetemCommand = {
 
 class PumbaCommand {
   constructor() {}
-  command = "";
-  subCommand = "";
+  command;
+  subCommand;
   commandOptions;
   globalOptions;
-  container = "";
+  container;
+  subCommandOptions;
 
   withCommand(command) {
     if (!Object.values(Command).includes(command)) {
@@ -56,6 +57,12 @@ class PumbaCommand {
     return this;
   }
 
+  //TODO: maybe check if command options is allowedfor this command
+  withSubCommandOptions(options) {
+    this.subCommandOptions = { ...this.subCommandOptions, ...options };
+    return this;
+  }
+
   onTargetContainer(container) {
     this.container = container;
     return this;
@@ -65,14 +72,19 @@ class PumbaCommand {
     return `${akk} --${option[0]} ${option[1]}`;
   }
 
+  optionsToString(options) {
+    return options ? Object.entries(options).reduce(this.reduceOptions, "") : "";
+  }
+
   build() {
-    const globalOptions = this.globalOptions
-      ? Object.entries(this.globalOptions).reduce(this.reduceOptions, "")
-      : "";
-    const commandOptions = this.commandOptions
-      ? Object.entries(this.commandOptions).reduce(this.reduceOptions, "")
-      : "";
-    return `pumba ${globalOptions} ${this.command} ${this.subCommand} ${commandOptions} ${this.container}`.replace(/\s\s+/g, ' ');
+    const globalOptions = this.optionsToString(this.globalOptions);
+    const commandOptions = this.optionsToString(this.commandOptions);
+    const subCommandOptions = this.optionsToString(this.subCommandOptions);
+
+    return `pumba ${globalOptions} ${this.command} ${subCommandOptions} ${this.subCommand} ${commandOptions} ${this.container}`.replace(
+      /\s\s+/g,
+      " "
+    );
   }
 }
 

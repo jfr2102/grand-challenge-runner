@@ -54,6 +54,7 @@ const buildPumbaCommand = (container, operation) => {
   return new PumbaCommand()
     .withCommand(operation.command)
     .withSubCommand(operation.subCommand)
+    .withSubCommandOptions(operation.subCommandOptions)
     .withCommandOptions(operation.commandOptions)
     .withGlobalOptions(operation.globalOptions)
     .onTargetContainer(fullContainerName)
@@ -123,8 +124,8 @@ const isSelf = (nodeName) => {
     hostName = execSync("docker node inspect self --format '{{.Description.Hostname}}'")
       .toString()
       .replace(/\n/g, "");
-    console.log("HOSTNAME: ", hostName, "; ", hostName?.length);
-    console.log("VS. NODE NAME: ", nodeName, "; ", nodeName?.length);
+    // console.log("HOSTNAME: ", hostName);
+    // console.log("VS. NODE NAME: ", nodeName);
   } catch (e) {
     console.log(e.error);
     return true;
