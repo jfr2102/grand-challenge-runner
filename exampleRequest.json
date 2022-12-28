@@ -3,7 +3,7 @@
   "injectCount": 1,
   "operation": {
     "command": "netem",
-    "subcommand": "delay",
+    "subCommand": "delay",
     "globalOptions": {},
     "commandOptions": { "time": 10 }
   }

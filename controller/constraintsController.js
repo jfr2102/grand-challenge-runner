@@ -179,6 +179,6 @@ const readLabels = (compose_file) => {
 module.exports = {
   processConstraints,
   treatMissingConstraints,
-  getWorkerServiceList: getTargetServiceInstanceList,
+  getTargetServiceInstanceList,
   readLabels,
 };

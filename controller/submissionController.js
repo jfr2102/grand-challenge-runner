@@ -41,7 +41,7 @@ const injectChaos = async (req, res) => {
   submisisonId = req.params.id;
   //
   
-  const targetServiceInstances = constraintsController.getWorkerServiceList(file, req.body.nodetype)
+  const targetServiceInstances = constraintsController.getTargetServiceInstanceList(file, req.body.nodetype)
   const result = experimentController.injectChaosToOne(submisisonId, targetServiceInstances, req.body.operation);
   // 
   res.send(result);
