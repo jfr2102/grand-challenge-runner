@@ -38,7 +38,7 @@ const removeSubmission = async (req, res) => {
 const injectChaos = async (req, res) => {
   submisisonId = req.params.id;
   file = constraintsControllerHelper.loadYmlFromFileSystem(
-    `../deploy/${submisisonId}-docker-stack.yaml`
+    `deploy/${submisisonId}-docker-stack.yaml`
   );
   console.log(file);
 
