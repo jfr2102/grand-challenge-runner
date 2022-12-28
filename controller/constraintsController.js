@@ -148,15 +148,14 @@ const getTargetServiceInstanceList = (compose_file, nodetype) => {
   console.log("GET container list for node type: ", nodetype);
   var map = new Multimap();
   var targetList = [];
-  const doc = constraintsControllerHelper.loadYmlFromFile(compose_file);
   const services = Object.keys(doc.services);
   //TODO: handle cases where not available
   services.map((service) => {
-    const label = doc.services[service].deploy?.labels?.nodetype ?? nodetype;
+    const label = compose_file.services[service].deploy?.labels?.nodetype ?? nodetype;
     map.set(label, service);
 
     if (label === nodetype) {
-      const replicas = doc.services[service].deploy?.replicas ?? 1;
+      const replicas = compose_file.services[service].deploy?.replicas ?? 1;
       for (var i = 0; i < replicas; i++) {
         targetList.push(service);
       }
