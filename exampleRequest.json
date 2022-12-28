@@ -1,10 +1,10 @@
 {
-    "nodeType" : "worker",
-    "injectCount" : 1, 
-    "operation": {
-        "command": "kill" , 
-        "globalOptions" : [],
-        "commandOptions" : []
-    }
+  "nodeType": "worker",
+  "injectCount": 1,
+  "operation": {
+    "command": "netem",
+    "subcommand": "delay",
+    "globalOptions": {},
+    "commandOptions": { "time": 10 }
+  }
 }
-// containers get chosen by the application (by the nodeType)

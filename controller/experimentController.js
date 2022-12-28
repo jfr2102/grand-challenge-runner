@@ -1,5 +1,6 @@
 const { exec, execSync } = require("child_process");
 const { NodeSSH } = require("node-ssh");
+const { PumbaCommand, Command, NetemCommand } = require("./PumbaCommand");
 
 const runExperiment = async (compose_file, id, labels) => {
   console.log(id);
@@ -44,38 +45,51 @@ const get_random = (list) => {
  * Generate cmdline command to stop a container with given container ID or name
  * @param {*} container The container's id or name to stop
  */
-const buildDockerStopCommand = (serviceInstance) => {
-  const fullContainerName = `${serviceInstance.name}.${serviceInstance.id}`;
+const buildDockerStopCommand = (container) => {
+  const fullContainerName = `${container.name}.${container.id}`;
   return `docker stop ${fullContainerName}`;
 };
 
-//TODO generalize to execute any pumba command on a container later
 /**
- * execute docker stop command for container on local machine
+ * Generate cmdline Pumba command for given container ID or name
+ * @param {*} container The target container ID or name
  */
-const localCommand = (serviceInstance) => {
+const buildPumbaCommand = (container, operation) => {
+  const fullContainerName = `${container.name}.${container.id}`;
+  return new PumbaCommand()
+    .withCommand(operation.command)
+    .withSubCommand(operation.subCommand)
+    .withCommandOptions(operation.commandOptions)
+    .withGlobalOptions(operation.globalOptions)
+    .onTargetContainer(fullContainerName)
+    .build();
+};
+
+/**
+ * execute command on local machine
+ */
+const localCommand = (cmd) => {
   console.log("Node is myself -> execute command locally:");
-  exec(buildDockerStopCommand(serviceInstance), (err, output) => {
+  exec(cmd, (err, output) => {
     logIfError(err);
     console.log("Output: \n", output);
   });
 };
 
-//TODO generalize to execute any pumba command on remote host
 /**
- * execute command on remote host given a service instance
- * @param {*} serviceInstance - {name: name, id: id, host: host}
+ * execute command on remote host given a container
+ * @param {*} container - {name: name, id: id, host: host}
  */
-const remoteCommand = (serviceInstance) => {
+const remoteCommand = (container, cmd) => {
   console.log("Remote Host. Trying to get nodes IP:");
   //get the worker ip and execute on it via ssh
-  exec(`docker node inspect ${serviceInstance.node} --format '{{.Status.Addr}}'`, (err, output) => {
+  exec(`docker node inspect ${container.node} --format '{{.Status.Addr}}'`, (err, output) => {
     logIfError(err);
     const hostIP = output.replace(/\s/g, "");
     console.log("chosen host's IP: ", hostIP);
 
     // now we need to send this host a message to kill one of the service instances that he is running
-    sendRemoteCommand(hostIP, serviceInstance);
+    sendRemoteCommand(hostIP, cmd);
   });
 };
 
@@ -84,8 +98,9 @@ const remoteCommand = (serviceInstance) => {
  * send a docker stop command to a containerID on given host (IP)
  * @param {*} hostIP - IP address of the host the container is running on
  * @param {*} containerId - container ID of the container to stop
+ * @param {*} operation - operation to send to the remote
  */
-const sendRemoteCommand = (hostIP, serviceInstance) => {
+const sendRemoteCommand = (hostIP, cmd) => {
   // TODO make username, private key path env file variables
   const ssh = new NodeSSH();
   ssh
@@ -97,7 +112,7 @@ const sendRemoteCommand = (hostIP, serviceInstance) => {
     .then(() => {
       // later can send more advanced pumba commands here, we can use container ID or later service name etc. to do some filtering
       // because of swarm the container cant be killed with just the id or name but we need the combination
-      ssh.execCommand(buildDockerStopCommand(serviceInstance)).then((result) => {
+      ssh.execCommand(cmd).then((result) => {
         console.log("STDOUT: ", result.stdout);
         console.log("STDERROR: ", result.stderr);
       });
@@ -146,27 +161,28 @@ const getServiceInstanceNodeMappingFromOutput = (output) => {
 const injectChaosToOne = (id, targetServiceInstances, operation) => {
   console.log("Target service Instances: ", targetServiceInstances, "operation: ", operation);
   const serviceToKill = get_random(targetServiceInstances);
-  const fullInstanceName = `submission_${id}_${serviceToKill}`;
-  console.log("Chosen instance: ", fullInstanceName);
+  const fullServiceName = `submission_${id}_${serviceToKill}`;
+  console.log("Chosen service: ", fullServiceName);
 
   // find the IP address of one of the swarm nodes the service is running on
   // first list nodes this service is running one and their container IDs
   exec(
-    `docker service ps ${fullInstanceName} --format "{{.Name}};{{.ID}};{{.Node}}" --no-trunc --filter desired-state=running`,
+    `docker service ps ${fullServiceName} --format "{{.Name}};{{.ID}};{{.Node}}" --no-trunc --filter desired-state=running`,
     (err, output) => {
       logIfError(err);
       const swarmNodes = getServiceInstanceNodeMappingFromOutput(output);
       console.log("Containers of this service to choose from: ", swarmNodes);
 
       //choose random swarm worker node that runs an instance of this service:
-      var serviceInstance = get_random(swarmNodes);
-      console.log("Chosen service instance and node: ", serviceInstance);
+      var container = get_random(swarmNodes);
+      console.log("Chosen container and node: ", container);
 
-      if (isSelf(serviceInstance.node)) {
-        // execute locally
-        localCommand(serviceInstance, operation);
+      const pumbaCommand = buildPumbaCommand(container, operation);
+
+      if (isSelf(container.node)) {
+        localCommand(pumbaCommand);
       } else {
-        remoteCommand(serviceInstance, operation);
+        remoteCommand(container, pumbaCommand);
       }
     }
   );
