@@ -148,7 +148,7 @@ const getTargetServiceInstanceList = (compose_file, nodetype) => {
   console.log("GET container list for node type: ", nodetype);
   var map = new Multimap();
   var targetList = [];
-  const services = Object.keys(doc.services);
+  const services = Object.keys(compose_file.services);
   //TODO: handle cases where not available
   services.map((service) => {
     const label = compose_file.services[service].deploy?.labels?.nodetype ?? nodetype;
