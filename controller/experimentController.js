@@ -194,7 +194,7 @@ const removeStack = (id) => {
     }
     console.log("Output: \n", output);
   });
-  return error ? true : false;
+  return error ? false : true;
 };
 
 module.exports = {
