@@ -51,13 +51,13 @@ class PumbaCommand {
     return this;
   }
 
-  //TODO: maybe check if command options is allowedfor this command
+  //TODO: maybe check if command options is allowed for this command
   withCommandOptions(options) {
     this.commandOptions = { ...this.commandOptions, ...options };
     return this;
   }
 
-  //TODO: maybe check if command options is allowedfor this command
+  //TODO: maybe check if command options is allowed for this command
   withSubCommandOptions(options) {
     this.subCommandOptions = { ...this.subCommandOptions, ...options };
     return this;

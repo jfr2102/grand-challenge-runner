@@ -3,10 +3,13 @@ var Multimap = require("multimap");
 const fs = require("fs");
 const constraintsControllerHelper = require("../controller/constraintsControllerHelper");
 
-const processConstraints = (compose_file, fileName, fileUUID) => {
+const processConstraints = (compose_file, deployFileName) => {
   var cpu_sum = 0;
   var memory_sum = 0;
   const doc = constraintsControllerHelper.loadYmlFromFile(compose_file);
+  if (!doc?.services) {
+    return { success: false, message: "Invalid docker-compose file" };
+  }
   const services = Object.keys(doc.services);
   const missingLimits = new Multimap();
   var missingCPU = 0;
@@ -16,7 +19,8 @@ const processConstraints = (compose_file, fileName, fileUUID) => {
     limitConfig = yaml.load(fs.readFileSync("config/config.yml", "utf8"));
   } catch (e) {
     console.log(e);
-    return;
+    //TODO this should not be users concern ever
+    return { success: false, message: e };
   }
 
   // go over all services and sum up resource restrictions * replicas and mark those with mssing ones
@@ -37,7 +41,6 @@ const processConstraints = (compose_file, fileName, fileUUID) => {
 
       memory_limit = limits.memory;
       if (memory_limit) {
-        // console.log(memory_limit);
         var factor = constraintsControllerHelper.getMemoryUnitFactor(memory_limit);
         memory_sum += memory_limit.slice(0, -1) * factor;
       } else {
@@ -51,38 +54,43 @@ const processConstraints = (compose_file, fileName, fileUUID) => {
     }
   });
 
-  if (cpu_sum > limitConfig.cpu_limit || memory_sum > limitConfig.memory_limit) {
-    console.log(`exceeded resources \n CPU sum: ${cpu_sum} Memory sum: ${memory_sum}`);
-    return;
+  let exceeded = false;
+  let message = "exceeded resource limitations:\n";
+  if (cpu_sum > limitConfig.cpu_limit) {
+    exceeded = true;
+    message += `CPU: ${cpu_sum} / ${limitConfig.cpu_limit} `;
   }
+  if (memory_sum > limitConfig.memory_limit) {
+    exceeded = true;
+    message += `Memory : ${memory_sum} / ${limitConfig.memory_limit}`;
+  }
+  if (exceeded) return { success: false, message: message };
 
-  const deployFileName = treatMissingConstraints(
+  const submisison = treatMissingConstraints(
     doc,
-    fileName,
-    fileUUID,
     cpu_sum,
     memory_sum,
     limitConfig.cpu_limit,
     limitConfig.memory_limit,
     missingLimits,
     missingCPU,
-    missingMemory
+    missingMemory,
+    deployFileName
   );
 
-  return deployFileName;
+  return submisison;
 };
 
 const treatMissingConstraints = (
   yaml_file,
-  fileName,
-  fileUUID,
   cpu_sum,
   memory_sum,
   cpu_limit,
   memory_limit,
   missingLimits,
   missingCPU,
-  missingMemory
+  missingMemory,
+  deployFileName
 ) => {
   const cpu_available_total = cpu_limit - cpu_sum;
   const memory_available_total = memory_limit - memory_sum;
@@ -129,14 +137,13 @@ const treatMissingConstraints = (
     }
   });
   // write out to file
-  const deployFileName = `deploy/${fileUUID}-docker-stack.yaml`;
   const success = true;
   fs.writeFileSync(deployFileName, yaml.dump(yaml_file), (err) => {
     if (err) success = false;
     return;
   });
 
-  return success ? deployFileName : undefined;
+  return { success: success, message: success ? "Success" : "Failed to write submission file" };
 };
 /**
  * Get worker service list for a compose file
