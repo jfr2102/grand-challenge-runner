@@ -17,7 +17,8 @@ const postSubmissionFile = async (req, res) => {
 
   if (submission.success) {
     const result = await experimentController.runExperiment(deployFileName, submissionUUID);
-    res.status(200).send("Deployed " + deployFileName + (result ? result : ""));
+    console.log("Result: ", result);
+    res.status(result ? 500 : 200).send("Deployed " + deployFileName + (result ? result : ""));
   } else {
     res.status(500).send("Invalid Submission: " + submission.message);
   }
