@@ -1,32 +1,32 @@
-const { v4: uuidv4 } = require("uuid");
 const constraintsController = require("../controller/constraintsController");
+const constraintsControllerHelper = require("../controller/constraintsControllerHelper");
 const experimentController = require("../controller/experimentController");
 const short = require("short-uuid");
 
 const postSubmissionFile = async (req, res) => {
-  file = req.files.myfile;
-  // const submissionUUID = uuidv4();
+  file = req.files?.submission_stack;
   const submissionUUID = short.generate();
   const fileName = `upload/${submissionUUID}-docker-stack.yml`;
-  await file.mv(fileName);
+  await file?.mv(fileName);
 
-  const deployFileName = constraintsController.processConstraints(file, fileName, submissionUUID);
+  const deployFileName = `deploy/${submissionUUID}-docker-stack.yaml`;
+  const submission = constraintsController.processConstraints(file, deployFileName);
 
   // maybe handy later, for now we only care about workers
   // const labels = constraintsController.readLabels(file);
 
-  if (deployFileName) {
-    const result = await experimentController.runExperiment(deployFileName, submissionUUID, labels);
-    res.status(200).send("Deployed " + deployFileName + (result ? result : ""));
+  if (submission.success) {
+    const result = await experimentController.runExperiment(deployFileName, submissionUUID);
+    console.log("Result: ", result);
+    res.status(result ? 500 : 200).send("Deployed " + deployFileName + (result ? result : ""));
   } else {
-    res.status(500).send("Invalid Resource Restrictions");
+    res.status(500).send("Invalid Submission: " + submission.message);
   }
 };
 
 const removeSubmission = async (req, res) => {
   submisisonId = req.params.id;
   const success = experimentController.removeStack(submisisonId);
-  //TOOD: delte file from disk after some time maybe
   if (success) {
     res.status(200).send("Removed Stack " + submisisonId);
   } else {
@@ -34,18 +34,25 @@ const removeSubmission = async (req, res) => {
   }
 };
 
-const killWorker = async (req, res) => {
-  // TODO: what else can we do instead having to resend the compose file? Could store the relevant info in redis,
-  // then fetch once we want to kill a worker -> actually just use file from filesystem (we know its name b the ID)
-  file = req.files.myfile;
+const injectChaos = async (req, res) => {
   submisisonId = req.params.id;
-  const workerServices = constraintsController.getWorkerServiceList(file);
-  const result = experimentController.killOneWorker(submisisonId, workerServices);
+  file = constraintsControllerHelper.loadYmlFromFileSystem(
+    `deploy/${submisisonId}-docker-stack.yaml`
+  );
+  const targetServiceInstances = constraintsController.getTargetServiceInstanceList(
+    file,
+    req.body.nodeType
+  );
+  const result = experimentController.injectChaosToOne(
+    submisisonId,
+    targetServiceInstances,
+    req.body.operation
+  );
   res.send(result);
 };
 
 module.exports = {
   postSubmissionFile,
   removeSubmission,
-  killWorker,
+  injectChaos,
 };

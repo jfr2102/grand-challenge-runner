@@ -1,0 +1,9 @@
+{
+  "nodeType": "worker",
+  "operation": {
+    "command": "netem",
+    "subCommand": "delay",
+    "commandOptions": { "time": 10},
+    "subCommandOptions": {"duration": "60s", "tc-image": "gaiadocker/iproute2"}
+  } 
+}

@@ -1,8 +1,8 @@
 const { exec, execSync } = require("child_process");
 const { NodeSSH } = require("node-ssh");
+const { PumbaCommand, Command, NetemCommand } = require("./PumbaCommand");
 
-const runExperiment = async (compose_file, id, labels) => {
-  console.log(id);
+const runExperiment = async (compose_file, id) => {
   if (process.env.ENV === "dev") {
     console.log("DEV, dont run command");
   } else {
@@ -26,11 +26,6 @@ const runExperiment = async (compose_file, id, labels) => {
 const logIfError = (err) => {
   if (err) console.error("could not execute command: ", err);
 };
-/**
- * Kill a random worker of a submission stack
- * @param {*} id - submission ID of the stack
- * @param {*} workerServices - service name list of all worker services
- */
 
 // @TODO move to helper
 /**
@@ -44,38 +39,52 @@ const get_random = (list) => {
  * Generate cmdline command to stop a container with given container ID or name
  * @param {*} container The container's id or name to stop
  */
-const buildDockerStopCommand = (serviceInstance) => {
-  const fullContainerName = `${serviceInstance.name}.${serviceInstance.id}`;
+const buildDockerStopCommand = (container) => {
+  const fullContainerName = `${container.name}.${container.id}`;
   return `docker stop ${fullContainerName}`;
 };
 
-//TODO generalize to execute any pumba command on a container later
 /**
- * execute docker stop command for container on local machine
+ * Generate cmdline Pumba command for given container ID or name
+ * @param {*} container The target container ID or name
  */
-const localKillCommand = (serviceInstance) => {
+const buildPumbaCommand = (container, operation) => {
+  const fullContainerName = `${container.name}.${container.id}`;
+  return new PumbaCommand()
+    .withCommand(operation.command)
+    .withSubCommand(operation.subCommand)
+    .withSubCommandOptions(operation.subCommandOptions)
+    .withCommandOptions(operation.commandOptions)
+    .withGlobalOptions(operation.globalOptions)
+    .onTargetContainer(fullContainerName)
+    .build();
+};
+
+/**
+ * execute command on local machine
+ */
+const localCommand = (cmd) => {
   console.log("Node is myself -> execute command locally:");
-  exec(buildDockerStopCommand(serviceInstance), (err, output) => {
+  exec(cmd, (err, output) => {
     logIfError(err);
     console.log("Output: \n", output);
   });
 };
 
-//TODO generalize to execute any pumba command on remote host
 /**
- * execute command on remote host given a service instance
- * @param {*} serviceInstance - {name: name, id: id, host: host}
+ * execute command on remote host given a container
+ * @param {*} container - {name: name, id: id, host: host}
  */
-const remoteKillCommand = (serviceInstance) => {
+const remoteCommand = (container, cmd) => {
   console.log("Remote Host. Trying to get nodes IP:");
   //get the worker ip and execute on it via ssh
-  exec(`docker node inspect ${serviceInstance.node} --format '{{.Status.Addr}}'`, (err, output) => {
+  exec(`docker node inspect ${container.node} --format '{{.Status.Addr}}'`, (err, output) => {
     logIfError(err);
     const hostIP = output.replace(/\s/g, "");
     console.log("chosen host's IP: ", hostIP);
 
     // now we need to send this host a message to kill one of the service instances that he is running
-    sendKillCommand(hostIP, serviceInstance);
+    sendRemoteCommand(hostIP, cmd);
   });
 };
 
@@ -84,8 +93,9 @@ const remoteKillCommand = (serviceInstance) => {
  * send a docker stop command to a containerID on given host (IP)
  * @param {*} hostIP - IP address of the host the container is running on
  * @param {*} containerId - container ID of the container to stop
+ * @param {*} operation - operation to send to the remote
  */
-const sendKillCommand = (hostIP, serviceInstance) => {
+const sendRemoteCommand = (hostIP, cmd) => {
   // TODO make username, private key path env file variables
   const ssh = new NodeSSH();
   ssh
@@ -97,7 +107,7 @@ const sendKillCommand = (hostIP, serviceInstance) => {
     .then(() => {
       // later can send more advanced pumba commands here, we can use container ID or later service name etc. to do some filtering
       // because of swarm the container cant be killed with just the id or name but we need the combination
-      ssh.execCommand(buildDockerStopCommand(serviceInstance)).then((result) => {
+      ssh.execCommand(cmd).then((result) => {
         console.log("STDOUT: ", result.stdout);
         console.log("STDERROR: ", result.stderr);
       });
@@ -113,8 +123,8 @@ const isSelf = (nodeName) => {
     hostName = execSync("docker node inspect self --format '{{.Description.Hostname}}'")
       .toString()
       .replace(/\n/g, "");
-    console.log("HOSTNAME: ", hostName, "; ", hostName?.length);
-    console.log("VS. NODE NAME: ", nodeName, "; ", nodeName?.length);
+    // console.log("HOSTNAME: ", hostName);
+    // console.log("VS. NODE NAME: ", nodeName);
   } catch (e) {
     console.log(e.error);
     return true;
@@ -139,13 +149,13 @@ const getServiceInstanceNodeMappingFromOutput = (output) => {
 };
 
 /**
- * Kill / stop a single random worker container of a given stack
+ *  Inject chaos into a single random container of a target list for a given stack
  * @param {*} id submisison / stack id
- * @param {*} workerServices list of worker services with duplicates to weight replica count
+ * @param {*} targetServiceInstances list of worker services with duplicates to weight replica count
  */
-const killOneWorker = (id, workerServices) => {
-  console.log("Worker services: ", workerServices);
-  const serviceToKill = get_random(workerServices);
+const injectChaosToOne = (id, targetServiceInstances, operation) => {
+  console.log("Target service Instances: ", targetServiceInstances, "operation: ", operation);
+  const serviceToKill = get_random(targetServiceInstances);
   const fullServiceName = `submission_${id}_${serviceToKill}`;
   console.log("Chosen service: ", fullServiceName);
 
@@ -159,14 +169,15 @@ const killOneWorker = (id, workerServices) => {
       console.log("Containers of this service to choose from: ", swarmNodes);
 
       //choose random swarm worker node that runs an instance of this service:
-      var serviceInstance = get_random(swarmNodes);
-      console.log("Chosen service instance and node: ", serviceInstance);
+      var container = get_random(swarmNodes);
+      console.log("Chosen container and node: ", container);
 
-      if (isSelf(serviceInstance.node)) {
-        // execute locally
-        localKillCommand(serviceInstance);
+      const pumbaCommand = buildPumbaCommand(container, operation);
+      console.log("Command: ", pumbaCommand);
+      if (isSelf(container.node)) {
+        localCommand(pumbaCommand);
       } else {
-        remoteKillCommand(serviceInstance);
+        remoteCommand(container, pumbaCommand);
       }
     }
   );
@@ -182,11 +193,11 @@ const removeStack = (id) => {
     }
     console.log("Output: \n", output);
   });
-  return error ? true : false;
+  return error ? false : true;
 };
 
 module.exports = {
   runExperiment,
-  killOneWorker,
+  injectChaosToOne,
   removeStack,
 };

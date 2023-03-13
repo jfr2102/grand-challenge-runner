@@ -1,5 +1,3 @@
-//TODO: undefined limts get the rest of available resources evenly distributed
-
 const express = require("express");
 const submissionController = require("../controller/submissionController");
 const router = express.Router();
@@ -9,7 +7,7 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/upload/", submissionController.postSubmissionFile);
-router.post("/:id/killworker", submissionController.killWorker);
+router.post("/:id/chaos", submissionController.injectChaos);
 router.delete("/:id/", submissionController.removeSubmission);
 
 module.exports = router;

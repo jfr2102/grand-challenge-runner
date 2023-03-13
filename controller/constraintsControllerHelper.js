@@ -1,8 +1,19 @@
 const yaml = require("js-yaml");
+const fs = require("fs");
 
 const loadYmlFromFile = (file) => {
   try {
     const yml_file = yaml.load(file.data.toString());
+    return yml_file;
+  } catch (e) {
+    console.log(e);
+    return null;
+  }
+};
+
+const loadYmlFromFileSystem = (fileName) => {
+  try {
+    const yml_file = yaml.load(fs.readFileSync(fileName, "utf8"));
     return yml_file;
   } catch (e) {
     console.log(e);
@@ -30,5 +41,6 @@ const getMemoryUnitFactor = (memory_limit) => {
 
 module.exports = {
   loadYmlFromFile,
+  loadYmlFromFileSystem,
   getMemoryUnitFactor,
 };
