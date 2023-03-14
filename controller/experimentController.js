@@ -5,16 +5,20 @@ const { PumbaCommand, Command, NetemCommand } = require("./PumbaCommand");
 const runExperiment = async (compose_file, id) => {
   if (process.env.ENV === "dev") {
     console.log("DEV, dont run command");
+    return;
   } else {
     var error;
     console.log("Deploy " + compose_file + "with id: " + id + "\n");
-    exec(`docker stack deploy --compose-file ${compose_file} submission_${id}`, (err, output) => {
-      if (err) {
-        console.error("could not execute command: ", err);
-        error = err;
+    execSync(
+      `docker stack deploy --compose-file ${compose_file} submission_${id}`,
+      (err, output) => {
+        if (err) {
+          console.error("could not execute command: ", err);
+          error = err;
+        }
+        console.log("Output: \n", output);
       }
-      console.log("Output: \n", output);
-    });
+    );
     return error;
   }
 };

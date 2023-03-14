@@ -4,11 +4,14 @@ const experimentController = require("../controller/experimentController");
 const short = require("short-uuid");
 
 const postSubmissionFile = async (req, res) => {
+  //TODO handle other names?
   file = req.files?.submission_stack;
+  if (!file) {
+    res.status(500).send("No Submission File found. Please use key 'submission_stack'");
+  }
   const submissionUUID = short.generate();
   const fileName = `upload/${submissionUUID}-docker-stack.yml`;
   await file?.mv(fileName);
-
   const deployFileName = `deploy/${submissionUUID}-docker-stack.yaml`;
   const submission = constraintsController.processConstraints(file, deployFileName);
 
