@@ -10,8 +10,11 @@ console.log("Node version: ", process.version);
 let API_KEY;
 
 try {
-  config = yaml.load(fs.readFileSync("config/config.yml", "utf8"));
-  API_KEY = config.api_key;
+  API_KEY = process.env.API_KEY;
+  if (!API_KEY) {
+    config = yaml.load(fs.readFileSync("config/config.yml", "utf8"));
+    API_KEY = config.api_key;
+  }
 } catch (e) {
   console.log(e);
   return;
