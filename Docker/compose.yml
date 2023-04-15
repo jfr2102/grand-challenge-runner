@@ -1,0 +1,29 @@
+version: "3.9"
+services:
+  jobmanager:
+    image: jfr212/jfr_flink 
+    ports:
+      - "8081"
+    command: standalone-job --job-classname org.apache.flink.streaming.examples.wordcount.WordCount -input /opt/flink/usrlib/artifacts/bible.txt
+    volumes:
+      - /opt/flink/usrlib
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        parallelism.default: 2        
+    restart: no
+  taskmanager:
+    image: jfr212/jfr_flink 
+    depends_on:
+      - jobmanager
+    command: taskmanager
+    volumes:
+      - /opt/flink/usrlib
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        taskmanager.numberOfTaskSlots: 2
+        parallelism.default: 2
+    restart: no       

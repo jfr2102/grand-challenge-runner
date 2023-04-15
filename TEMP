@@ -1,0 +1,16 @@
+wget https://github.com/prometheus/node_exporter/releases/download/v1.5.0/node_exporter-1.5.0.linux-amd64.tar.gz
+tar xvfz node_exporter-1.5.0.linux-amd64.tar.gz
+cd node_exporter-1.5.0.linux-amd64
+nohup ./node_exporter &
+curl http://localhost:9100/metrics
+
+
+remove all stacks at once
+docker stack rm $(docker stack ls --format "{{.Name}}")
+
+
+
+
+avg without (mode,cpu) (1 - rate(node_cpu_seconds_total{mode="idle"}[1m])) *100
+
+100 * (1 - ((avg_over_time(node_memory_MemFree_bytes[1m]) + avg_over_time(node_memory_Cached_bytes[1m]) + avg_over_time(node_memory_Buffers_bytes[1m])) / avg_over_time(node_memory_MemTotal_bytes[1m])))
