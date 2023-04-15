@@ -2,21 +2,28 @@ const { exec, execSync } = require("child_process");
 const { NodeSSH } = require("node-ssh");
 const { PumbaCommand, Command, NetemCommand } = require("./PumbaCommand");
 
-const runExperiment = async (compose_file, id) => {
+const runExperiment = (compose_file, id) => {
+  var error;
   if (process.env.ENV === "dev") {
     console.log("DEV, dont run command");
-  } else {
-    var error;
-    console.log("Deploy " + compose_file + "with id: " + id + "\n");
-    exec(`docker stack deploy --compose-file ${compose_file} submission_${id}`, (err, output) => {
-      if (err) {
-        console.error("could not execute command: ", err);
-        error = err;
-      }
+    try {
+      output = execSync("docker wrongCommand");
       console.log("Output: \n", output);
-    });
-    return error;
+    } catch (err) {
+      console.error("could not execute command: ", err.toString());
+      error = err;
+    }
+  } else {
+    console.log("Deploy " + compose_file + " with id: " + id + "\n");
+    try {
+      output = execSync(`docker stack deploy --compose-file ${compose_file} submission_${id}`);
+      console.log("Output: \n", output);
+    } catch (err) {
+      console.error("could not execute command: ", err.toString());
+      error = err;
+    }
   }
+  return error;
 };
 
 // @TODO move to helper

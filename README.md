@@ -10,6 +10,11 @@ Provides a REST API to:
 - ssh access to all swarm nodes from the node this application runs on
 - the application has to run on the leader swarm node since it uses docker cli to select containers to inject fault into and their hosts
 - install and run node processs once with [pm2](https://pm2.keymetrics.io/docs/usage/quick-start/)
+- run the App with the node installation that is output in the action after node installation. For example:
+    ```sh
+    pm2 start --name=NodeApp index.js --interpreter=/home/ubuntu/actions-runner/_work/_tool/node/18.1.0/x64/bin/node
+    ```
+
 - Install [Pumba](https://github.com/alexei-led/pumba) on all swarm nodes:
 
     ```sh
