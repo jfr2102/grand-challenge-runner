@@ -16,7 +16,7 @@ services:
       resources:
         limits:
           cpus: "0.25"
-          memory: 1G
+          memory: "0.5G"
       labels:
         nodetype: "coordinator"
       restart_policy:
@@ -38,7 +38,7 @@ services:
       resources:
         limits:
           cpus: "0.75"
-          memory: 3G
+          memory: "1.5G"
       labels:
         nodetype: "worker"
       restart_policy:

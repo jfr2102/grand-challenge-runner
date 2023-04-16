@@ -1,0 +1,20 @@
+version: "3.9"
+services:
+  someService:
+    image: someImage
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 1G
+      labels:
+        nodetype: "worker"
+  secondService:
+    image: secondImage
+    deploy:
+      replicas: 1
+      labels:
+        nodetype: "coordinator"
+  thirdService:
+    image: thirdImage
