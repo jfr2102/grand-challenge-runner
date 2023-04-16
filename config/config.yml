@@ -1,2 +1,2 @@
-cpu_limit: 1.0
+cpu_limit: 1.25
 memory_limit: 2048

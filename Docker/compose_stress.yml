@@ -1,0 +1,14 @@
+version: "3.9"
+services:
+  stress:
+    image: progrium/stress  
+    command: --cpu 8
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: "2G"
+      labels:
+        nodetype: "coordinator"
+      restart_policy:
+        condition: none 
