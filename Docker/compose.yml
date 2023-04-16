@@ -13,6 +13,10 @@ services:
         jobmanager.rpc.address: jobmanager
         parallelism.default: 2        
     deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 1G
       labels:
         nodetype: "coordinator"
       restart_policy:
@@ -31,6 +35,10 @@ services:
         taskmanager.numberOfTaskSlots: 2
         parallelism.default: 2
     deploy:
+      resources:
+        limits:
+          cpus: "0.75"
+          memory: 3G
       labels:
         nodetype: "worker"
       restart_policy:
