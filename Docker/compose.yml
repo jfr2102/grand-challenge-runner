@@ -12,7 +12,11 @@ services:
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
         parallelism.default: 2        
-    restart: no
+    deploy:
+      labels:
+        nodetype: "coordinator"
+      restart_policy:
+        condition: none 
   taskmanager:
     image: jfr212/jfr_flink 
     depends_on:
@@ -26,4 +30,8 @@ services:
         jobmanager.rpc.address: jobmanager
         taskmanager.numberOfTaskSlots: 2
         parallelism.default: 2
-    restart: no       
+    deploy:
+      labels:
+        nodetype: "worker"
+      restart_policy:
+        condition: none 
