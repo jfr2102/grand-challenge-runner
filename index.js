@@ -19,7 +19,7 @@ try {
   console.log(e);
   return;
 }
-
+console.log(API_KEY);
 app.use(
   cors({
     origin: ["http://localhost:3000"],
