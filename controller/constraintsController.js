@@ -110,9 +110,10 @@ const treatMissingConstraints = (
   console.log("= ", cpu_available_relative, " | ", memory_available_relative);
 
   missingLimits.forEach((value, key) => {
+    const replicas = yaml_file.services[key].deploy?.replicas || 1;
     const LIMITS = {
-      cpus: cpu_available_relative,
-      memory: memory_available_relative,
+      cpus: (cpu_available_relative / replicas).toFixed(2),
+      memory: (memory_available_relative / replicas).toFixed(2),
     };
 
     const RESOURCES = {

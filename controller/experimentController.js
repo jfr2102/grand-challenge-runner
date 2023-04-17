@@ -6,13 +6,6 @@ const runExperiment = (compose_file, id) => {
   var error;
   if (process.env.ENV === "dev") {
     console.log("DEV, dont run command");
-    try {
-      output = execSync("docker wrongCommand");
-      console.log("Output: \n", output);
-    } catch (err) {
-      console.error("could not execute command: ", err.toString());
-      error = err;
-    }
   } else {
     console.log("Deploy " + compose_file + " with id: " + id + "\n");
     try {
@@ -47,7 +40,7 @@ const get_random = (list) => {
  * @param {*} container The container's id or name to stop
  */
 const buildDockerStopCommand = (container) => {
-  const fullContainerName = `${container.name}.${container.id}`;
+  const fullContainerName = `${container?.name}.${container?.id}`;
   return `docker stop ${fullContainerName}`;
 };
 
@@ -56,7 +49,7 @@ const buildDockerStopCommand = (container) => {
  * @param {*} container The target container ID or name
  */
 const buildPumbaCommand = (container, operation) => {
-  const fullContainerName = `${container.name}.${container.id}`;
+  const fullContainerName = `${container?.name}.${container?.id}`;
   return new PumbaCommand()
     .withCommand(operation.command)
     .withSubCommand(operation.subCommand)
